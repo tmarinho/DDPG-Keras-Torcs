@@ -35,10 +35,10 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
 
     vision = False
 
-    EXPLORE = 100000.
+    EXPLORE = 1000000.
     episode_count = 2000
-    max_steps = 5000
-    reward = -1000
+    max_steps = 850
+    reward = -15
     done = False
     step = 0
     epsilon = 1
@@ -94,7 +94,7 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
             #s_t2 =np.expand_dims(s_t,axis = 1)
             a_t_original = actor.model.predict(s_t)
 
-            noise_t = train_indicator * max(epsilon, 0) * OU.function(a_t_original, 0 , 0.0, 0.5)
+            noise_t = train_indicator * max(epsilon, 0) * OU.function(a_t_original, 0 , 0.0, 5)
             #noise_t[0][1] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][1],  0.5 , 1.00, 0.10)
             #noise_t[0][2] = train_indicator * max(epsilon, 0) * OU.function(a_t_original[0][2], -0.1 , 1.00, 0.05)
 
@@ -110,6 +110,7 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
             ob, r_t, done, info = env.step(a_t[0])
             s_t1 = np.asarray([ob]) #TODO increase for more states
             #r_t = np.asarray([r_t])
+
             buff.add(s_t, a_t[0], r_t, s_t1, done)      #Add replay buffer
 
             #Do the batch update
@@ -148,8 +149,12 @@ def playGame(train_indicator=1):    #1 means Train, 0 means simply Run
 
         if np.mod(i, 3) == 0:
             plt.close()
+            f = plt.figure()
+            ax = f.add_subplot(111)
             plt.plot(env.hist)
-            #plt.ylim([-1, 2])
+            plt.plot(np.ones(len(env.hist))*env.desired_state)
+            #plt.text(0.2, 0.2,str(env.desired_state),horizontalalignment='center', verticalalignment='center',transform = ax.transAxes)
+            #plt.ylim([-1, 1])
             plt.show(block=False)
             #plt.draw()
             if (train_indicator):

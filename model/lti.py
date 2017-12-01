@@ -11,17 +11,19 @@ class LTI:
         self.time = 0.0
         control_frequency = 200 # Hz for attitude control loop
         self.dt = 1.0 / control_frequency
+        self.desired_state = 0
 
 
     def reset(self):
-        self.state = 0
+        self.state = np.random.rand() - 0.5
+        self.desired_state = np.random.rand()*2 - 1
         self.hist = []
         return self.state
 
     def state_dot(self, state, t, u, time):
         x1 = state
         b = 1
-        a = 5
+        a = 1
         self.s_dot = 0.0
         #d =0.014*sin(time*5)
         self.s_dot  = -a*x1 + b*u
@@ -29,7 +31,7 @@ class LTI:
         return self.s_dot
 
     def reward(self,desired_state,u):
-        return -10*(self.state - desired_state)**2 - 0.5*u**2
+        return -10*(self.state - desired_state)**2 - 0.5*u**2 
 
     def update(self, u):
         #saturate u
@@ -41,11 +43,11 @@ class LTI:
         self.hist.append(np.array(self.state[0]))
 
     def step(self, action):
-        desired_state = -1.2
+
         done = False
         #action = agent.do_action(env.state)
-        self.update(action)
-        reward = self.reward(desired_state, action)
+        self.update(self.desired_state - action)
+        reward = self.reward(self.desired_state, action)
         if abs(self.state) > 3 or abs(self.s_dot)>50:
             done = True
 
