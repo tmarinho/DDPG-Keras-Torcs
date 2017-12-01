@@ -1,16 +1,15 @@
 import numpy as np
 import math
-from keras.initializations import normal, identity
+from keras.initializers import RandomUniform
 from keras.models import model_from_json
 from keras.models import Sequential, Model
-from keras.engine.training import collect_trainable_weights
 from keras.layers import Dense, Flatten, Input, merge, Lambda
 from keras.optimizers import Adam
 import tensorflow as tf
 import keras.backend as K
 
-HIDDEN1_UNITS = 300
-HIDDEN2_UNITS = 600
+HIDDEN1_UNITS = 30
+HIDDEN2_UNITS = 60
 
 class ActorNetwork(object):
     def __init__(self, sess, state_size, action_size, BATCH_SIZE, TAU, LEARNING_RATE):
@@ -22,8 +21,8 @@ class ActorNetwork(object):
         K.set_session(sess)
 
         #Now create the model
-        self.model , self.weights, self.state = self.create_actor_network(state_size, action_size)   
-        self.target_model, self.target_weights, self.target_state = self.create_actor_network(state_size, action_size) 
+        self.model , self.weights, self.state = self.create_actor_network(state_size, action_size)
+        self.target_model, self.target_weights, self.target_state = self.create_actor_network(state_size, action_size)
         self.action_gradient = tf.placeholder(tf.float32,[None, action_size])
         self.params_grad = tf.gradients(self.model.output, self.weights, -self.action_gradient)
         grads = zip(self.params_grad, self.weights)
@@ -45,13 +44,15 @@ class ActorNetwork(object):
 
     def create_actor_network(self, state_size,action_dim):
         print("Now we build the model")
-        S = Input(shape=[state_size])   
+        S = Input(shape=[state_size])
         h0 = Dense(HIDDEN1_UNITS, activation='relu')(S)
         h1 = Dense(HIDDEN2_UNITS, activation='relu')(h0)
-        Steering = Dense(1,activation='tanh',init=lambda shape, name: normal(shape, scale=1e-4, name=name))(h1)  
-        Acceleration = Dense(1,activation='sigmoid',init=lambda shape, name: normal(shape, scale=1e-4, name=name))(h1)   
-        Brake = Dense(1,activation='sigmoid',init=lambda shape, name: normal(shape, scale=1e-4, name=name))(h1) 
-        V = merge([Steering,Acceleration,Brake],mode='concat')          
-        model = Model(input=S,output=V)
-        return model, model.trainable_weights, S
+        #u1 = Dense(action_dim,activation='linear', kernel_initializer=RandomUniform(-0.03, 0.03))(h1)
+        u1 = Dense(action_dim,activation='linear')(h1)
 
+        #Acceleration = Dense(1,activation='sigmoid',init=lambda shape, name: normal(shape, scale=1e-4, name=name))(h1)
+        #Brake = Dense(1,activation='sigmoid',init=lambda shape, name: normal(shape, scale=1e-4, name=name))(h1)
+        #V = merge([Steering,Acceleration,Brake],mode='concat')
+        #V = merge([u1],mode='concat')
+        model = Model(input=S,output=u1)
+        return model, model.trainable_weights, S
